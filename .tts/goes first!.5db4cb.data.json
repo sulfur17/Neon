@@ -1,0 +1,104 @@
+{
+  "GUID": "5db4cb",
+  "Name": "Custom_Dice",
+  "Transform": {
+    "posX": -13.8851233,
+    "posY": 2.1604,
+    "posZ": 28.9315681,
+    "rotX": 270,
+    "rotY": 155.940048,
+    "rotZ": 0,
+    "scaleX": 2,
+    "scaleY": 2,
+    "scaleZ": 2
+  },
+  "Nickname": "goes first!",
+  "Description": "Who goes first dice [scripted] by 0rganics, v2.5",
+  "GMNotes": "",
+  "AltLookAngle": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "ColorDiffuse": {
+    "r": 1,
+    "g": 1,
+    "b": 1
+  },
+  "LayoutGroupSortIndex": 0,
+  "Value": 0,
+  "Locked": false,
+  "Grid": false,
+  "Snap": false,
+  "IgnoreFoW": false,
+  "MeasureMovement": false,
+  "DragSelectable": true,
+  "Autoraise": true,
+  "Sticky": true,
+  "Tooltip": true,
+  "GridProjection": false,
+  "HideWhenFaceDown": false,
+  "Hands": false,
+  "CustomImage": {
+    "ImageURL": "0rganics.org/tts/wgf/2.php?v=2&c=wwwwww",
+    "ImageSecondaryURL": "",
+    "ImageScalar": 1,
+    "WidthScale": 0,
+    "CustomDice": {
+      "Type": 1
+    }
+  },
+  "LuaScript": "whoGoesFirstVersion = 2\r\n\r\nfunction onLoad()\r\n    startLuaCoroutine(self, 'whoGoesFirstNameSides')\r\nend\r\n\r\nfunction onPickedUp()\r\n    startLuaCoroutine(self, 'whoGoesFirst')\r\nend\r\n\r\nfunction onObjectRandomize(obj)\r\n    if obj == self then\r\n        startLuaCoroutine(self, 'whoGoesFirst')\r\n    end\r\nend\r\n\r\n\r\n\r\nfunction whoGoesFirst()\r\n    coroutine.yield(0)\r\n    local seated = \"\"\r\n    local dietype = 1\r\n    local colors = {\"Red\",\"Orange\",\"Yellow\",\"Green\",\"Teal\",\"Blue\",\"Purple\",\"Pink\",\"Brown\",\"White\"}\r\n    local shortc = {\"r\",\"o\",\"y\",\"g\",\"t\",\"b\",\"p\",\"i\",\"n\",\"w\"}\r\n    for k,color in pairs(colors) do\r\n        if Player[color].seated then\r\n            seated = seated .. shortc[k]\r\n        end\r\n    end\r\n\r\n    if string.len(seated) > 0 then\r\n        if string.len(seated) == 7 or string.len(seated) == 9 then\r\n            seated = seated .. 'x'\r\n        end\r\n\r\n        if string.len(seated) == 1 or string.len(seated) == 2 or string.len(seated) == 3 or string.len(seated) == 6 then\r\n            rep = math.floor(6/string.len(seated))\r\n            dietype = 1\r\n        elseif string.len(seated) == 4 or string.len(seated) == 7 or string.len(seated) == 8 then\r\n            rep = math.floor(8/string.len(seated))\r\n            dietype = 2\r\n        elseif string.len(seated) == 5 or string.len(seated) == 9 or string.len(seated) == 10 then\r\n            rep = math.floor(10/string.len(seated))\r\n            dietype = 3\r\n        end\r\n        seated = string.rep(seated,rep)\r\n    end\r\n\n    local url = \"0rganics.org/tts/wgf/2.php?v=\" .. whoGoesFirstVersion .. \"&c=\" .. seated\n    local arr = {image=url,type=dietype}\n    local cur = self.getCustomObject()\n    if cur.image != url then\r\n        self.setCustomObject(arr)\r\n        self.reload()\r\n    else\n        startLuaCoroutine(self, 'whoGoesFirstNameSides')\n    end\r\n    return 1\r\nend\r\n\r\nfunction whoGoesFirstNameSides()\r\n    coroutine.yield(0)\r\n    local url = \"0rganics.org/tts/wgf/2.php?v=\" .. whoGoesFirstVersion .. \"&c=\"\r\n    local cur = self.getCustomObject()\r\n    local rotvals = {}\r\n\r\n    if cur.image != url then\r\n        local colors = {\"Red\",\"Orange\",\"Yellow\",\"Green\",\"Teal\",\"Blue\",\"Purple\",\"Pink\",\"Brown\",\"White\"}\r\n        local shortc = {\"r\",\"o\",\"y\",\"g\",\"t\",\"b\",\"p\",\"i\",\"n\",\"w\"}\r\n        local c = string.sub(cur.image,string.len(url))\r\n        local playersides = {}\r\n        local k = 1\r\n\r\n        if string.len(c) > 0 then\r\n            while k <= string.len(c) do\r\n                if string.sub(c,k,k) == \"x\" then\r\n                    table.insert(playersides,\"Roll again to see who\")\r\n                else\r\n                    for i=1,10 do\r\n            \t\t\tif string.sub(c,k,k) == shortc[i] then\r\n                            if Player[colors[i]].seated then\r\n                                table.insert(playersides,Player[colors[i]].steam_name)\r\n                            else\r\n                                table.insert(playersides,colors[i])\r\n                            end\r\n            \t\t\t\tbreak\r\n            \t\t\tend\r\n            \t\tend\r\n                end\r\n                k = k + 1\r\n            end\r\n\r\n            if cur.type == 1 then\r\n                rotvals[1] = {value=playersides[1],rotation={-90,0,0}}\r\n                rotvals[2] = {value=playersides[2],rotation={0,0,0}}\r\n                rotvals[3] = {value=playersides[3],rotation={0,0,-90}}\r\n                rotvals[4] = {value=playersides[4],rotation={0,0,90}}\r\n                rotvals[5] = {value=playersides[5],rotation={0,0,-180}}\r\n                rotvals[6] = {value=playersides[6],rotation={90,0,0}}\r\n            elseif cur.type == 2 then\r\n                rotvals[1] = {value=playersides[1],rotation={-33,0,90}}\r\n                rotvals[2] = {value=playersides[2],rotation={-33,0,180}}\r\n                rotvals[3] = {value=playersides[3],rotation={33,180,-180}}\r\n                rotvals[4] = {value=playersides[4],rotation={33,180,90}}\r\n                rotvals[5] = {value=playersides[5],rotation={33,180,-90}}\r\n                rotvals[6] = {value=playersides[6],rotation={33,180,0}}\r\n                rotvals[7] = {value=playersides[7],rotation={-33,0,0}}\r\n                rotvals[8] = {value=playersides[8],rotation={-33,0,-90}}\r\n            elseif cur.type == 3 then\r\n                rotvals[1] = {value=playersides[1],rotation={-38,180,234}}\r\n                rotvals[2] = {value=playersides[2],rotation={38,180,-233}}\r\n                rotvals[3] = {value=playersides[3],rotation={-38,0,20}}\r\n                rotvals[4] = {value=playersides[4],rotation={38,180,-17}}\r\n                rotvals[5] = {value=playersides[5],rotation={-38,0,90}}\r\n                rotvals[6] = {value=playersides[6],rotation={38,180,-161}}\r\n                rotvals[7] = {value=playersides[7],rotation={-38,0,307}}\r\n                rotvals[8] = {value=playersides[8],rotation={38,180,-304}}\r\n                rotvals[9] = {value=playersides[9],rotation={-38,0,163}}\r\n                rotvals[10] = {value=playersides[10],rotation={38,180,-90}}\r\n            end\r\n            self.setName(\"goes first!\")\r\n        else\r\n            self.setName(\"Who goes first?\")\r\n        end\r\n    else\r\n        self.setName(\"Who goes first?\")\r\n    end\r\n    self.setRotationValues(rotvals);\r\n    return 1\r\nend",
+  "LuaScriptState": "",
+  "XmlUI": "",
+  "RotationValues": [
+    {
+      "Value": "White",
+      "Rotation": {
+        "x": -90,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "Value": "White",
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "Value": "White",
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": -90
+      }
+    },
+    {
+      "Value": "White",
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 90
+      }
+    },
+    {
+      "Value": "White",
+      "Rotation": {
+        "x": 0,
+        "y": 0,
+        "z": -180
+      }
+    },
+    {
+      "Value": "White",
+      "Rotation": {
+        "x": 90,
+        "y": 0,
+        "z": 0
+      }
+    }
+  ]
+}

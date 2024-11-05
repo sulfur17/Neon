@@ -1,0 +1,57 @@
+{
+  "GUID": "e36ee2",
+  "Name": "Custom_Token",
+  "Transform": {
+    "posX": -1.17346644e-7,
+    "posY": 1.581499,
+    "posZ": -4.377216e-8,
+    "rotX": -5.23102756e-7,
+    "rotY": 0,
+    "rotZ": 0,
+    "scaleX": 1.81955469,
+    "scaleY": 1,
+    "scaleZ": 1.81955469
+  },
+  "Nickname": "Десантный корабль",
+  "Description": "",
+  "GMNotes": "",
+  "AltLookAngle": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "ColorDiffuse": {
+    "r": 1,
+    "g": 1,
+    "b": 1
+  },
+  "LayoutGroupSortIndex": 0,
+  "Value": 0,
+  "Locked": true,
+  "Grid": true,
+  "Snap": true,
+  "IgnoreFoW": false,
+  "MeasureMovement": false,
+  "DragSelectable": true,
+  "Autoraise": true,
+  "Sticky": true,
+  "Tooltip": false,
+  "GridProjection": false,
+  "HideWhenFaceDown": false,
+  "Hands": false,
+  "CustomImage": {
+    "ImageURL": "https://steamusercontent-a.akamaihd.net/ugc/2429222166871478908/E6918CFDC337F48380ECE53967EECD45F8139521/",
+    "ImageSecondaryURL": "",
+    "ImageScalar": 1,
+    "WidthScale": 0,
+    "CustomToken": {
+      "Thickness": 0.2,
+      "MergeDistancePixels": 15,
+      "StandUp": false,
+      "Stackable": false
+    }
+  },
+  "LuaScript": "",
+  "LuaScriptState": "",
+  "XmlUI": "<Button onClick=\"Global/btnStart\" id=\"start\" position=\"0 0 -150\" width=\"300\" height=\"100\" fontSize=\"40\" text=\"Старт\" />\r\n\r\n<Button onClick=\"Global/test\" id=\"test\" position=\"0 50 -150\" width=\"300\" height=\"100\" fontSize=\"40\" text=\"test\" />\r\n"
+}

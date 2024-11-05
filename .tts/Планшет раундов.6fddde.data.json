@@ -1,0 +1,120 @@
+{
+  "GUID": "6fddde",
+  "Name": "CardCustom",
+  "Transform": {
+    "posX": -0.168462664,
+    "posY": 1.49510384,
+    "posZ": 19.66896,
+    "rotX": 1.59960081e-8,
+    "rotY": 180,
+    "rotZ": -1.000197e-7,
+    "scaleX": 2.11755562,
+    "scaleY": 1,
+    "scaleZ": 2.11755562
+  },
+  "Nickname": "Планшет раундов",
+  "Description": "",
+  "GMNotes": "",
+  "AltLookAngle": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "ColorDiffuse": {
+    "r": 0.713235259,
+    "g": 0.713235259,
+    "b": 0.713235259
+  },
+  "LayoutGroupSortIndex": 0,
+  "Value": 0,
+  "Locked": false,
+  "Grid": true,
+  "Snap": true,
+  "IgnoreFoW": false,
+  "MeasureMovement": false,
+  "DragSelectable": true,
+  "Autoraise": true,
+  "Sticky": true,
+  "Tooltip": false,
+  "GridProjection": false,
+  "HideWhenFaceDown": true,
+  "Hands": true,
+  "CardID": 100,
+  "SidewaysCard": false,
+  "CustomDeck": {
+    "1": {
+      "FaceURL": "https://steamusercontent-a.akamaihd.net/ugc/2429222166871565885/30A2D4A8605850C1A0B3E25F2C49550716FBB2B6/",
+      "BackURL": "https://steamusercontent-a.akamaihd.net/ugc/2429222166871565852/695595D1F30BCA2C2C97E791012EA00F453994BF/",
+      "NumWidth": 1,
+      "NumHeight": 1,
+      "BackIsHidden": true,
+      "UniqueBack": false,
+      "Type": 0
+    }
+  },
+  "LuaScript": "",
+  "LuaScriptState": "",
+  "XmlUI": "<Button onClick=\"Global/btnNextRound\"\r\n    rotation=\"0 0 180\" position=\"0 0 -50\" fontSize=\"40\"\r\n    width=\"250\" height=\"120\" scale=\"0.25 0.5 1\"\r\n    text=\"Следующий раунд\" />",
+  "AttachedSnapPoints": [
+    {
+      "Position": {
+        "x": 0.5650214,
+        "y": 0.209305957,
+        "z": -0.499405533
+      },
+      "Tags": [
+        "TableToken"
+      ]
+    },
+    {
+      "Position": {
+        "x": -0.6017253,
+        "y": 0.209305719,
+        "z": 0.4869251
+      },
+      "Tags": [
+        "TableToken"
+      ]
+    },
+    {
+      "Position": {
+        "x": -0.5950803,
+        "y": 0.209305882,
+        "z": -0.491102
+      },
+      "Tags": [
+        "TableToken"
+      ]
+    },
+    {
+      "Position": {
+        "x": 0.00253539323,
+        "y": 0.209306017,
+        "z": -0.9859322
+      },
+      "Tags": [
+        "TableToken"
+      ]
+    },
+    {
+      "Position": {
+        "x": -0.00742428564,
+        "y": 0.209305644,
+        "z": 0.989399433
+      },
+      "Tags": [
+        "TableToken"
+      ]
+    },
+    {
+      "Position": {
+        "x": 0.5798191,
+        "y": 0.209305763,
+        "z": 0.5028318
+      },
+      "Tags": [
+        "TableToken"
+      ]
+    }
+  ]
+}

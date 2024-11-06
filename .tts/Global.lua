@@ -3,22 +3,34 @@
 --#region Const
 
 TABLE_TOKEN_TAG = 'TableToken'
+FIGHTER_TOKEN_TAG = 'FighterToken'
 
 SectorsList = nil
 SectorOrder = nil
 TableOrder = nil
 Sectors = nil
+Started = false
 
 --#endregion
 
 --#region Events
+
 function onLoad(script_state)
     math.randomseed(os.time())
+
+    local state, loaded = LoadedState(script_state)
+    if loaded then
+        Started = state.Started
+    end
 
     Init()
 end
 
 function onSave()
+    local state = {
+        Started = Started
+    }
+    return JSON.encode(state)
 end
 
 --#endregion
@@ -28,7 +40,7 @@ end
 function btnStart(player, click, id)
     if click ~= '-1' then return end -- pressed not with LMB
 
-    LandingShip.UI.setAttribute(id, 'active', false)
+    Started = true
 
     TableOrder = ShuffledList(SectorsList)
     PlaceTableTokens(TableOrder)
@@ -36,19 +48,26 @@ function btnStart(player, click, id)
     PlaceSectors(SectorOrder)
     PlaceBots(SectorsList)
 
+    UpdateUI()
 end
 
 function btnNextRound(player, click, id)
     if click ~= '-1' then return end -- pressed not with LMB
 
-    local tokens = GetObjectsByProperty(RoundsSheetZone.getObjects(), {tag=TABLE_TOKEN_TAG})
-    for _,token in ipairs(tokens) do
+    local objectsOnSectors = ObjectsOnSectors(getObjects())
+
+    local tableTokens = GetObjectsByProperty(RoundsSheetZone.getObjects(), {tag=TABLE_TOKEN_TAG})
+    for _,token in ipairs(tableTokens) do
         local n = tonumber(token.getGMNotes())
+
+        LiftTokensOnSector(n, objectsOnSectors)
         DeleteSector(n)
+
+        --[[local sector = Sectors[n]
+        objectsOnSectors[sector] = {}]]
     end
 
-    local tab = ObjectsOnSectors(getObjects())
-    AttachObjectsToSectors(tab)
+    AttachObjectsToSectors(objectsOnSectors)
 
     PlaceSectors(SectorOrder)
 
@@ -56,31 +75,15 @@ function btnNextRound(player, click, id)
 
 end
 
-function RemoveAttachmentsFromSectors()
-    for _,sec in pairs(Sectors) do
-        sec.removeAttachments()
-    end
-end
-
-function AttachObjectsToSectors(tab)
-    for sec, objs in pairs(tab) do
-        if #objs > 0 then
-            for _,obj in ipairs(objs) do
-                sec.addAttachment(obj)
-            end
+function LiftTokensOnSector(sectorID, objectsOnSectors)
+    local objects = objectsOnSectors[Sectors[sectorID]]
+    for _,obj in pairs(objects) do
+        if obj.hasTag(FIGHTER_TOKEN_TAG) then
+            obj.lock()
+            MoveSmooth(obj, {y=5})
         end
     end
 end
-
-function DeleteSector(n)
-    local sector = Sectors[n]
-    if sector then
-        sector.destruct()
-        SectorOrder = RemoveValueFromList(SectorOrder, n)
-        Sectors[n] = nil
-    end
-end
-
 
 function test(player, click, id)
     if click ~= '-1' then return end -- pressed not with LMB
@@ -169,6 +172,10 @@ function Init()
     RoundsSheetZone = getObjectFromGUID('297069')
 end
 
+function UpdateUI()
+    LandingShip.UI.setAttribute('start', 'active', not Started)
+end
+
 function PlaceTableTokens(list)
     for i,n in ipairs(list) do
         local token = Tokens.Table[n]
@@ -206,6 +213,31 @@ function PlaceBots(list)
     for i,n in ipairs(list) do
         local sector = Sectors[n]
         BotsContainer.takeObject({position=sector.getPosition() + Vector(0, 1, 0), rotation=sector.getRotation()})
+    end
+end
+
+function AttachObjectsToSectors(tab)
+    for sec, objs in pairs(tab) do
+        if #objs > 0 then
+            for _,obj in ipairs(objs) do
+                sec.addAttachment(obj)
+            end
+        end
+    end
+end
+
+function RemoveAttachmentsFromSectors()
+    for _,sec in pairs(Sectors) do
+        sec.removeAttachments()
+    end
+end
+
+function DeleteSector(n)
+    local sector = Sectors[n]
+    if sector then
+        sector.destruct()
+        SectorOrder = RemoveValueFromList(SectorOrder, n)
+        Sectors[n] = nil
     end
 end
 

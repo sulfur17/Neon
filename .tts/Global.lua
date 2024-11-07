@@ -4,6 +4,10 @@
 
 TABLE_TOKEN_TAG = 'TableToken'
 FIGHTER_TOKEN_TAG = 'FighterToken'
+BOT_TAG = 'Bot'
+SEARCH_TOKEN_TAG = 'SearchToken'
+LIFT_HEIGHT = 3
+TIME_TO_MOVE_SECTORS = 1
 
 SectorsList = nil
 SectorOrder = nil
@@ -57,37 +61,63 @@ function btnNextRound(player, click, id)
     local objectsOnSectors = ObjectsOnSectors(getObjects())
 
     local tableTokens = GetObjectsByProperty(RoundsSheetZone.getObjects(), {tag=TABLE_TOKEN_TAG})
+
+    local prevOrder = CopyTable(SectorOrder)
+
+    local lifted = {}
     for _,token in ipairs(tableTokens) do
         local n = tonumber(token.getGMNotes())
 
-        LiftTokensOnSector(n, objectsOnSectors)
-        DeleteSector(n)
+        local sector = Sectors[n]
+        if sector then
+            for _,obj in ipairs(LiftObjectsOnSector(n, objectsOnSectors)) do
+                lifted[obj] = n
+            end
 
-        --[[local sector = Sectors[n]
-        objectsOnSectors[sector] = {}]]
+            DeleteSector(n)
+        end
     end
 
-    AttachObjectsToSectors(objectsOnSectors)
+    log(lifted)
+    AttachObjectsToSectors(objectsOnSectors, lifted)
 
     PlaceSectors(SectorOrder)
 
-    Wait.time(RemoveAttachmentsFromSectors, 1)
+    PlaceLifted(lifted, prevOrder, SectorOrder)
+
+    Wait.time(RemoveAttachmentsFromSectors, TIME_TO_MOVE_SECTORS)
 
 end
 
-function LiftTokensOnSector(sectorID, objectsOnSectors)
+function LiftObjectsOnSector(sectorID, objectsOnSectors)
+    local lifted = {}
     local objects = objectsOnSectors[Sectors[sectorID]]
     for _,obj in pairs(objects) do
         if obj.hasTag(FIGHTER_TOKEN_TAG) then
-            obj.lock()
-            MoveSmooth(obj, {y=5})
+            --obj.lock()
+            --local v = obj.getPosition()
+            --obj.setPositionSmooth(v + v)
+            --MoveSmooth(obj, {y=LIFT_HEIGHT})
+            table.insert(lifted, obj)
         end
     end
+    return lifted
 end
 
 function test(player, click, id)
     if click ~= '-1' then return end -- pressed not with LMB
     print('test')
+end
+
+function MovableObject(obj)
+
+    local tags = {FIGHTER_TOKEN_TAG, BOT_TAG, SEARCH_TOKEN_TAG}
+    for _,tag in ipairs(tags) do
+        if obj.hasTag(tag) then
+            return true
+        end
+    end
+    return false
 end
 
 function ObjectsOnSectors(objects)
@@ -98,17 +128,21 @@ function ObjectsOnSectors(objects)
     end
 
     for _,obj in ipairs(objects) do
-        local hitlist = Physics.cast({
-            origin = obj.getPosition(),
-            direction = Vector(0, -1, 0),
-            type = 1,
-            max_distance = 2,
-            debug = false,
-        })
+        if MovableObject(obj) then
+            local n = obj.getName()
+            --local n = obj.Nickname
+            local hitlist = Physics.cast({
+                origin = obj.getPosition()+Vector(0, 0.5, 0),
+                direction = Vector(0, -1, 0),
+                type = 1,
+                max_distance = 2,
+                debug = false,
+            })
 
-        local sector = ObjectIsOnSector(hitlist)
-        if sector then
-            table.insert(res[sector], obj)
+            local sector = ObjectIsOnSector(hitlist)
+            if sector then
+                table.insert(res[sector], obj)
+            end
         end
     end
 
@@ -208,6 +242,39 @@ function PlaceSectors(list)
     end
 end
 
+function PlaceLifted(lifted, prevOrder, newOrder)
+    local amount = {}
+    local r = 16
+    local angleStep = 360 / #newOrder -- angle step
+    local y = 2 --Sectors[list[1]].getPosition().y
+    for obj,n in pairs(lifted) do
+        local place = LiftPlace(n, prevOrder, newOrder)
+        if amount[place] then
+            amount[place] = amount[place] + 1
+        else
+            amount[place] = 0
+        end
+        local angle = angleStep * (place - 0.5)
+        local z = math.cos(math.rad(angle)) * (r + amount[place]*1.5)
+        local x = math.sin(math.rad(angle)) * (r + amount[place]*1.5)
+        obj.setPositionSmooth(Vector(x, y + amount[place], z))
+    end
+
+end
+
+function LiftPlace(prevN, prevOrder, newOrder)
+    local res = #newOrder
+    for i,n in ipairs(prevOrder) do
+        local k = ValueIsInTable(n, newOrder)
+        if k then
+            res = k
+        end
+        if n == prevN then
+            return res
+        end
+    end
+end
+
 function PlaceBots(list)
     BotsContainer.shuffle()
     for i,n in ipairs(list) do
@@ -216,11 +283,13 @@ function PlaceBots(list)
     end
 end
 
-function AttachObjectsToSectors(tab)
+function AttachObjectsToSectors(tab, except)
     for sec, objs in pairs(tab) do
-        if #objs > 0 then
+        if objs and #objs > 0 then
             for _,obj in ipairs(objs) do
-                sec.addAttachment(obj)
+                if not except[obj] then
+                    sec.addAttachment(obj)
+                end
             end
         end
     end

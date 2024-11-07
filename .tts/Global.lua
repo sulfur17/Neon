@@ -52,7 +52,51 @@ function btnStart(player, click, id)
     PlaceSectors(SectorOrder)
     PlaceBots(SectorsList)
 
+    CreateSearchButtons()
+
     UpdateUI()
+end
+
+function CreateSearchButtons()
+    for _,sector in ipairs(Sectors) do
+        sector.createButton({
+            click_function = 'btnSearch',
+            label = 'Поиск',
+            position = {x=0, y=0, z=-2},
+            rotation = {x=0, y=0, z=0},
+            scale = {x=0.5, y=1, z=0.5},
+            width = 600,
+            height = 250,
+            font_size = 160,
+        })
+    end
+end
+
+function btnSearch(sector, player_clicker_color, alt_click)
+    if alt_click then return end -- pressed not with LMB
+
+    local set = SetFromNotes(sector.getGMNotes())
+    if     set.Loot == '1' then
+
+        Decks.Loot.Green.deal(3, player_clicker_color)
+
+    elseif set.Loot == '2' then
+
+        Decks.Loot.Orange.deal(2, player_clicker_color)
+
+    elseif set.Loot == '3' then
+
+        Decks.Loot.Green.deal(1, player_clicker_color)
+        Decks.Loot.Purple.deal(1, player_clicker_color)
+
+    end
+
+    if set.N == '6' then -- В торговом центре на 1 оранжевую больше
+        Decks.Loot.Orange.deal(1, player_clicker_color)
+    end
+
+    SearchTokenBag.takeObject({position=sector.getPosition()+Vector(0,1,0), rotation=sector.getRotation()})
+
 end
 
 function btnNextRound(player, click, id)
@@ -89,6 +133,60 @@ function btnNextRound(player, click, id)
 
 end
 
+function test(player, click, id)
+    if click ~= '-1' then return end -- pressed not with LMB
+    print('test')
+end
+
+--#endregion
+
+function Init()
+    Tokens = {
+        Table = {
+            getObjectFromGUID('646edb'),
+            getObjectFromGUID('4eac3d'),
+            getObjectFromGUID('da7dca'),
+            getObjectFromGUID('cc1035'),
+            getObjectFromGUID('2e9c36'),
+            getObjectFromGUID('f8d30a'),
+            getObjectFromGUID('d5ac22'),
+            getObjectFromGUID('3bea0a'),
+            getObjectFromGUID('8c061b'),
+            getObjectFromGUID('58b7ed'),
+        }
+    }
+    SectorsList = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+    Sectors = {
+        getObjectFromGUID('f57542'),
+        getObjectFromGUID('c35477'),
+        getObjectFromGUID('5292ca'),
+        getObjectFromGUID('33c440'),
+        getObjectFromGUID('c7d737'),
+        getObjectFromGUID('d4906f'),
+        getObjectFromGUID('b78432'),
+        getObjectFromGUID('d6facf'),
+        getObjectFromGUID('1e60fd'),
+        getObjectFromGUID('15d7af'),
+    }
+    RoundsSheet = getObjectFromGUID('6fddde')
+    BotsContainer = getObjectFromGUID('ca0fdd')
+    LandingShip = getObjectFromGUID('e36ee2')
+    RoundsSheetZone = getObjectFromGUID('297069')
+    SearchTokenBag = getObjectFromGUID('c0d57e')
+    Decks = {
+        Loot = {
+            Green  = getObjectFromGUID('bb4db8'),
+            Orange = getObjectFromGUID('4a47be'),
+            Purple = getObjectFromGUID('8afbdf'),
+        }
+    }
+
+end
+
+function UpdateUI()
+    LandingShip.UI.setAttribute('start', 'active', not Started)
+end
+
 function LiftObjectsOnSector(sectorID, objectsOnSectors)
     local lifted = {}
     local objects = objectsOnSectors[Sectors[sectorID]]
@@ -102,11 +200,6 @@ function LiftObjectsOnSector(sectorID, objectsOnSectors)
         end
     end
     return lifted
-end
-
-function test(player, click, id)
-    if click ~= '-1' then return end -- pressed not with LMB
-    print('test')
 end
 
 function MovableObject(obj)
@@ -156,58 +249,6 @@ function ObjectIsOnSector(hitlist)
         end
     end
     return nil
-end
-
---#endregion
-
-function Init()
-    Tokens = {
-        Table = {
-            getObjectFromGUID('646edb'),
-            getObjectFromGUID('4eac3d'),
-            getObjectFromGUID('da7dca'),
-            getObjectFromGUID('cc1035'),
-            getObjectFromGUID('2e9c36'),
-            getObjectFromGUID('f8d30a'),
-            getObjectFromGUID('d5ac22'),
-            getObjectFromGUID('3bea0a'),
-            getObjectFromGUID('8c061b'),
-            getObjectFromGUID('58b7ed'),
-        },
-        Bots = {
-            getObjectFromGUID(''),
-            getObjectFromGUID(''),
-            getObjectFromGUID(''),
-            getObjectFromGUID(''),
-            getObjectFromGUID(''),
-            getObjectFromGUID(''),
-            getObjectFromGUID(''),
-            getObjectFromGUID(''),
-            getObjectFromGUID(''),
-            getObjectFromGUID(''),
-        },
-    }
-    SectorsList = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-    Sectors = {
-        getObjectFromGUID('f57542'),
-        getObjectFromGUID('c35477'),
-        getObjectFromGUID('5292ca'),
-        getObjectFromGUID('33c440'),
-        getObjectFromGUID('c7d737'),
-        getObjectFromGUID('d4906f'),
-        getObjectFromGUID('b78432'),
-        getObjectFromGUID('d6facf'),
-        getObjectFromGUID('1e60fd'),
-        getObjectFromGUID('15d7af'),
-    }
-    RoundsSheet = getObjectFromGUID('6fddde')
-    BotsContainer = getObjectFromGUID('ca0fdd')
-    LandingShip = getObjectFromGUID('e36ee2')
-    RoundsSheetZone = getObjectFromGUID('297069')
-end
-
-function UpdateUI()
-    LandingShip.UI.setAttribute('start', 'active', not Started)
 end
 
 function PlaceTableTokens(list)

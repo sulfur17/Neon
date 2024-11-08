@@ -260,13 +260,7 @@ end
 
 function PlaceSectors(list)
 
-    local r = ({
-        [10] = 10,
-        [9]  = 9.5,
-        [8]  = 9,
-        [7]  = 8.5,
-        [6]  = 8,
-    })[math.max(#list, 6)]
+    local r = 10
 
     local angleStep = 360 / #list -- angle step
     local y = Sectors[list[1]].getPosition().y
@@ -329,6 +323,7 @@ function AttachObjectsToSectors(tab, except)
         if objs and #objs > 0 then
             for _,obj in ipairs(objs) do
                 if not except[obj] then
+                    obj.setPosition(obj.getPosition() + Vector(0,1,0))
                     sec.addAttachment(obj)
                 end
             end

@@ -28,6 +28,8 @@ function onLoad(script_state)
     end
 
     Init()
+
+    HighlightFightersTokens()
 end
 
 function onSave()
@@ -133,6 +135,10 @@ function btnNextRound(player, click, id)
 
 end
 
+function onObjectSpawn(obj)
+    HighlightFighterToken(obj)
+end
+
 function test(player, click, id)
     if click ~= '-1' then return end -- pressed not with LMB
     print('test')
@@ -180,7 +186,14 @@ function Init()
             Purple = getObjectFromGUID('8afbdf'),
         }
     }
-
+    FighterColors = {
+        ['Глыба']   = 'Orange',
+        ['Призрак'] = 'White',
+        ['Феникс']  = 'Red',
+        ['Акари']   = 'Pink',
+        ['Снейк']   = 'Green',
+        ['Иллюзия'] = 'Teal',
+    }
 end
 
 function UpdateUI()
@@ -344,6 +357,21 @@ function DeleteSector(n)
         SectorOrder = RemoveValueFromList(SectorOrder, n)
         Sectors[n] = nil
     end
+end
+
+function HighlightFightersTokens()
+    local tokens = getObjectsWithTag(FIGHTER_TOKEN_TAG)
+    for _,obj in ipairs(tokens) do
+        HighlightFighterToken(obj)
+    end
+end
+
+function HighlightFighterToken(obj)
+    if not (obj.type == 'Tile' and obj.hasTag(FIGHTER_TOKEN_TAG)) then
+        return
+    end
+    local color = Color.fromString(FighterColors[obj.getName()])
+    obj.highlightOn(color)
 end
 
 require("Common")

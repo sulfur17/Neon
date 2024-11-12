@@ -105,9 +105,11 @@ end
 function btnNextRound(player, click, id)
     if click ~= '-1' then return end -- pressed not with LMB
 
+    local tableTokens = MoveTableTokensToSheet(id)
+
     local objectsOnSectors = ObjectsOnSectors(getObjects())
 
-    local tableTokens = GetObjectsByProperty(RoundsSheetZone.getObjects(), {tag=TABLE_TOKEN_TAG})
+    --local tableTokens = GetObjectsByProperty(RoundsInfo.Zone.getObjects(), {tag=TABLE_TOKEN_TAG})]]
 
     local prevOrder = CopyTable(SectorOrder)
 
@@ -177,10 +179,8 @@ function Init()
         getObjectFromGUID('1e60fd'),
         getObjectFromGUID('15d7af'),
     }
-    RoundsSheet = getObjectFromGUID('6fddde')
     BotsContainer = getObjectFromGUID('ca0fdd')
     LandingShip = getObjectFromGUID('e36ee2')
-    RoundsSheetZone = getObjectFromGUID('297069')
     SearchTokenBag = getObjectFromGUID('c0d57e')
     Decks = {
         Loot = {
@@ -196,6 +196,23 @@ function Init()
         ['Акари']   = 'Pink',
         ['Снейк']   = 'Green',
         ['Иллюзия'] = 'Teal',
+    }
+
+    TableTokensZone = getObjectFromGUID('56882d')
+    RoundsInfo = {
+        Sheet = getObjectFromGUID('6fddde'),
+        Zone = getObjectFromGUID('297069'),
+        Positions = {
+            Vector(   0, 2,  2.1),
+            Vector( 1.7, 2,  1.06),
+            Vector( 1.7, 2, -1.06),
+            Vector(   0, 2, -2.1),
+            Vector(-1.7, 2, -1.06),
+            Vector(-1.7, 2,  1.06),
+            Vector(   0, 2,  0),
+        },
+        ['2-4'] = {2, 2, 1, 2, 1, 2},
+        ['5-6'] = {1, 2, 1, 2, 1, 1, 2},
     }
 end
 
@@ -275,6 +292,10 @@ function PlaceTableTokens(list)
 end
 
 function PlaceSectors(list)
+
+    if #list == 0 then
+        return
+    end
 
     local r = 10
 
@@ -382,6 +403,60 @@ function SetupReadyTokens()
     for _,obj in ipairs(tokens) do
         SetFaceUpSmooth(obj, '+')
     end
+end
+
+function CurrentRound(players)
+    local tokens = RoundsInfo.Zone.getObjects()
+    tokens = GetObjectsByProperty(tokens, {tag=TABLE_TOKEN_TAG})
+    local round = 1
+    local rest = #tokens
+    local tokensAmound = CopyTable(RoundsInfo[players])
+    for _,n in ipairs(tokensAmound) do
+        if rest > 0 then
+            rest = rest - n
+            round = round + 1
+        else
+            return round
+        end
+    end
+    return round
+end
+
+function TopTableTokens(amount)
+    local order = {}
+    local tokens = TableTokensZone.getObjects()
+    tokens = GetObjectsByProperty(tokens, {tag=TABLE_TOKEN_TAG})
+
+    local yy = {}
+    for _,token in ipairs(tokens) do
+        local y = token.getPosition().y
+        order[y] = token
+        table.insert(yy, y)
+    end
+
+    table.sort(yy, function (a, b) return (a > b) end)
+
+    local top = {}
+    for i=1,amount do
+        local token = order[yy[i]]
+        table.insert(top, token)
+    end
+
+    return top
+end
+
+function MoveTableTokensToSheet(roundsSheetSide)
+
+    local round = CurrentRound(roundsSheetSide)
+    local tokensAmount = RoundsInfo[roundsSheetSide][round]
+    local vector = RoundsInfo.Positions[round]
+    local position = RoundsInfo.Sheet.getPosition() + vector
+    local tokens = TopTableTokens(tokensAmount)
+    for i,token in ipairs(tokens) do
+        token.setPositionSmooth(position + Vector(0, i, 0))
+    end
+
+    return tokens
 end
 
 require("Common")

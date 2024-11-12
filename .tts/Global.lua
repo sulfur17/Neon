@@ -6,6 +6,7 @@ TABLE_TOKEN_TAG = 'TableToken'
 FIGHTER_TOKEN_TAG = 'FighterToken'
 BOT_TAG = 'Bot'
 SEARCH_TOKEN_TAG = 'SearchToken'
+READY_TOKEN_TAG = 'ReadyToken'
 LIFT_HEIGHT = 3
 TIME_TO_MOVE_SECTORS = 1
 
@@ -132,6 +133,8 @@ function btnNextRound(player, click, id)
     PlaceLifted(lifted, prevOrder, SectorOrder)
 
     Wait.time(RemoveAttachmentsFromSectors, TIME_TO_MOVE_SECTORS)
+
+    SetupReadyTokens()
 
 end
 
@@ -372,6 +375,13 @@ function HighlightFighterToken(obj)
     end
     local color = Color.fromString(FighterColors[obj.getName()])
     obj.highlightOn(color)
+end
+
+function SetupReadyTokens()
+    local tokens = getObjectsWithTag(READY_TOKEN_TAG)
+    for _,obj in ipairs(tokens) do
+        SetFaceUpSmooth(obj, '+')
+    end
 end
 
 require("Common")

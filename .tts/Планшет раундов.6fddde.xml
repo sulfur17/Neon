@@ -1,9 +1,9 @@
-<Button onClick="Global/btnNextRound"
+<Button onClick="Global/btnNextRound" id="5-6"
     rotation="0 0 180" position="0 0 -50" fontSize="40"
     width="250" height="120" scale="0.25 0.5 1"
     text="Следующий раунд" />
 
-<Button onClick="Global/btnNextRound"
+<Button onClick="Global/btnNextRound" id="2-4"
     rotation="180 0 0" position="0 0 50" fontSize="40"
     width="250" height="120" scale="0.25 0.5 1"
     text="Следующий раунд" />

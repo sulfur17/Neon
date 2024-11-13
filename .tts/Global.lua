@@ -60,21 +60,6 @@ function btnStart(player, click, id)
     UpdateUI()
 end
 
-function CreateSearchButtons()
-    for _,sector in ipairs(Sectors) do
-        sector.createButton({
-            click_function = 'btnSearch',
-            label = 'Поиск',
-            position = {x=0, y=0, z=-2},
-            rotation = {x=0, y=0, z=0},
-            scale = {x=0.5, y=1, z=0.5},
-            width = 600,
-            height = 250,
-            font_size = 160,
-        })
-    end
-end
-
 function btnSearch(sector, player_clicker_color, alt_click)
     if alt_click then return end -- pressed not with LMB
 
@@ -218,6 +203,21 @@ end
 
 function UpdateUI()
     LandingShip.UI.setAttribute('start', 'active', not Started)
+end
+
+function CreateSearchButtons()
+    for _,sector in ipairs(Sectors) do
+        sector.createButton({
+            click_function = 'btnSearch',
+            label = 'Поиск',
+            position = {x=0, y=0, z=-2},
+            rotation = {x=0, y=0, z=0},
+            scale = {x=0.5, y=1, z=0.5},
+            width = 600,
+            height = 250,
+            font_size = 160,
+        })
+    end
 end
 
 function LiftObjectsOnSector(sectorID, objectsOnSectors)

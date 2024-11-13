@@ -92,7 +92,7 @@ function btnNextRound(player, click, id)
 
     local tableTokens = MoveTableTokensToSheet(id)
 
-    local objectsOnSectors = ObjectsOnSectors(getObjects())
+    local objectsOnSectors = ObjectsOnPlaces(getObjects(), Sectors)
 
     --local tableTokens = GetObjectsByProperty(RoundsInfo.Zone.getObjects(), {tag=TABLE_TOKEN_TAG})]]
 
@@ -189,11 +189,11 @@ function Init()
         Zone = getObjectFromGUID('297069'),
         Positions = {
             Vector(   0, 2,  2.1),
-            Vector( 1.7, 2,  1.06),
-            Vector( 1.7, 2, -1.06),
+            Vector( 1.7, 2,  1.0),
+            Vector( 1.7, 2, -1.0),
             Vector(   0, 2, -2.1),
-            Vector(-1.7, 2, -1.06),
-            Vector(-1.7, 2,  1.06),
+            Vector(-1.7, 2, -1.0),
+            Vector(-1.7, 2,  1.0),
             Vector(   0, 2,  0),
         },
         ['2-4'] = {2, 2, 1, 2, 1, 2},
@@ -244,35 +244,6 @@ function MovableObject(obj)
         end
     end
     return false
-end
-
-function ObjectsOnSectors(objects)
-
-    local res = {}
-    for _,sec in pairs(Sectors) do
-        res[sec] = {}
-    end
-
-    for _,obj in ipairs(objects) do
-        if MovableObject(obj) then
-            local n = obj.getName()
-            --local n = obj.Nickname
-            local hitlist = Physics.cast({
-                origin = obj.getPosition()+Vector(0, 0.5, 0),
-                direction = Vector(0, -1, 0),
-                type = 1,
-                max_distance = 2,
-                debug = false,
-            })
-
-            local sector = ObjectIsOnSector(hitlist)
-            if sector then
-                table.insert(res[sector], obj)
-            end
-        end
-    end
-
-    return res
 end
 
 function ObjectIsOnSector(hitlist)

@@ -1,4 +1,25 @@
---require("Common")
+--[[ TODO
+
+белые кубики
+сброс вещей
+фишки готовности с автопереворотом
+куда урон класть
+нужно порядок хода
+сторона Б не удобная
+как обозначить что боеприпас использован
+колоды вещей восстанавливать
+можно ли использовать несколько боеприпасов
+нельзя брать боеприпас
+автоподсчет очков
+запускать музыку
+
+режимы:
+возрождение
+королевская битва
+коалиция
+автома
+]]
+
 
 --#region Const
 
@@ -12,7 +33,6 @@ TIME_TO_MOVE_SECTORS = 1
 
 SectorsList = nil
 SectorOrder = nil
-TableOrder = nil
 Sectors = nil
 Started = false
 
@@ -23,19 +43,21 @@ Started = false
 function onLoad(script_state)
     math.randomseed(os.time())
 
+    Init()
+
     local state, loaded = LoadedState(script_state)
     if loaded then
         Started = state.Started
+        SectorOrder = state.SectorOrder
     end
-
-    Init()
 
     HighlightFightersTokens()
 end
 
 function onSave()
     local state = {
-        Started = Started
+        Started = Started,
+        SectorOrder = SectorOrder,
     }
     return JSON.encode(state)
 end
@@ -49,8 +71,8 @@ function btnStart(player, click, id)
 
     Started = true
 
-    TableOrder = ShuffledList(SectorsList)
-    PlaceTableTokens(TableOrder)
+    local tableOrder = ShuffledList(SectorsList)
+    PlaceTableTokens(tableOrder)
     SectorOrder = ShuffledList(SectorsList)
     PlaceSectors(SectorOrder)
     PlaceBots(SectorsList)
@@ -90,38 +112,13 @@ end
 function btnNextRound(player, click, id)
     if click ~= '-1' then return end -- pressed not with LMB
 
-    local tableTokens = MoveTableTokensToSheet(id)
+    local toClose = MoveTableTokensToSheet(id)
 
-    local objectsOnSectors = ObjectsOnPlaces(getObjects(), Sectors)
-
-    --local tableTokens = GetObjectsByProperty(RoundsInfo.Zone.getObjects(), {tag=TABLE_TOKEN_TAG})]]
-
-    local prevOrder = CopyTable(SectorOrder)
-
-    local lifted = {}
-    for _,token in ipairs(tableTokens) do
-        local n = tonumber(token.getGMNotes())
-
-        local sector = Sectors[n]
-        if sector then
-            for _,obj in ipairs(LiftObjectsOnSector(n, objectsOnSectors)) do
-                lifted[obj] = n
-            end
-
-            DeleteSector(n)
-        end
-    end
-
-    log(lifted)
-    AttachObjectsToSectors(objectsOnSectors, lifted)
-
-    PlaceSectors(SectorOrder)
-
-    PlaceLifted(lifted, prevOrder, SectorOrder)
-
-    Wait.time(RemoveAttachmentsFromSectors, TIME_TO_MOVE_SECTORS)
+    CloseSectors(toClose)
 
     SetupReadyTokens()
+
+    TurnOffShields()
 
 end
 
@@ -220,15 +217,21 @@ function CreateSearchButtons()
     end
 end
 
-function LiftObjectsOnSector(sectorID, objectsOnSectors)
+function LiftFightersOnSectors(numbers, objectsOnSectors)
     local lifted = {}
-    local objects = objectsOnSectors[Sectors[sectorID]]
+    for _,n in ipairs(numbers) do
+        for _,obj in ipairs(LiftFightersOnSector(n, objectsOnSectors)) do
+            lifted[obj] = n
+        end
+    end
+    return lifted
+end
+
+function LiftFightersOnSector(n, objectsOnSectors)
+    local lifted = {}
+    local objects = objectsOnSectors[Sectors[n]]
     for _,obj in pairs(objects) do
         if obj.hasTag(FIGHTER_TOKEN_TAG) then
-            --obj.lock()
-            --local v = obj.getPosition()
-            --obj.setPositionSmooth(v + v)
-            --MoveSmooth(obj, {y=LIFT_HEIGHT})
             table.insert(lifted, obj)
         end
     end
@@ -328,11 +331,13 @@ end
 
 function AttachObjectsToSectors(tab, except)
     for sec, objs in pairs(tab) do
-        if objs and #objs > 0 then
-            for _,obj in ipairs(objs) do
-                if not except[obj] then
-                    obj.setPosition(obj.getPosition() + Vector(0,1,0))
-                    sec.addAttachment(obj)
+        if sec then
+            if objs and #objs > 0 then
+                for _,obj in ipairs(objs) do
+                    if obj and not except[obj] then
+                        obj.setPosition(obj.getPosition() + Vector(0,1,0))
+                        sec.addAttachment(obj)
+                    end
                 end
             end
         end
@@ -340,17 +345,33 @@ function AttachObjectsToSectors(tab, except)
 end
 
 function RemoveAttachmentsFromSectors()
-    for _,sec in pairs(Sectors) do
-        sec.removeAttachments()
+    for _,n in pairs(SectorOrder) do
+        local sector = Sectors[n]
+        sector.removeAttachments()
     end
 end
 
-function DeleteSector(n)
-    local sector = Sectors[n]
-    if sector then
-        sector.destruct()
-        SectorOrder = RemoveValueFromList(SectorOrder, n)
-        Sectors[n] = nil
+-- Удаляет все жетоны с секторов кроме бойцов
+function DeleteUnwantedObjects(sectorNumbers, objectsOnSectors)
+    for _,n in ipairs(sectorNumbers) do
+        local objectsList = objectsOnSectors[Sectors[n]]
+        for _,obj in ipairs(objectsList) do
+            if not obj.hasTag(FIGHTER_TOKEN_TAG) then
+                obj.destroy()
+            end
+        end
+    end
+end
+
+function DeleteSectors(sectorNumbers, objectsOnSectors)
+    for _,n in ipairs(sectorNumbers) do
+        local sector = Sectors[n]
+        if sector then
+            objectsOnSectors[sector] = nil
+            sector.destruct()
+            SectorOrder = RemoveValueFromList(SectorOrder, n)
+            --Sectors[n] = nil
+        end
     end
 end
 
@@ -427,7 +448,100 @@ function MoveTableTokensToSheet(roundsSheetSide)
         token.setPositionSmooth(position + Vector(0, i, 0))
     end
 
-    return tokens
+    local toClose = {}
+    for _,token in ipairs(tokens) do
+        local n = tonumber(token.getGMNotes())
+        table.insert(toClose, n)
+    end
+
+    return toClose
+end
+
+function AdjecentSectorIDs(number)
+    local res_i = KeyByValue(SectorOrder, number) - 1
+    local prev = (res_i + #SectorOrder - 1) % #SectorOrder + 1
+    local next = (res_i + #SectorOrder + 1) % #SectorOrder + 1
+    return {SectorOrder[prev], SectorOrder[next]}
+end
+
+function DeleteSearchTokenOnSector(tokens)
+
+    if #tokens == 0 then
+        return
+    end
+
+    local token = tokens[1]
+    token.destruct()
+    table.remove(tokens, 1)
+    return token
+end
+
+function DeleteSearchTokensOnAdjecentSectors(searchTokensOnSectors, sectorIDs)
+    local deleted = {}
+
+    for _,main_id in ipairs(sectorIDs) do
+        local adjecentSectorsIDs = AdjecentSectorIDs(main_id)
+
+        for _,id in ipairs(adjecentSectorsIDs) do
+            local sector = Sectors[id]
+            local token = DeleteSearchTokenOnSector(searchTokensOnSectors[sector])
+            if deleted[sector] then
+                table.insert(deleted[sector], token)
+            else
+                deleted[sector] = {token}
+            end
+        end
+    end
+
+    return deleted
+end
+
+function ExcludeDeleted(objectsOnSectors, deleted)
+    for sec,objects in pairs(deleted) do
+        for _,obj in ipairs(objects) do
+            objectsOnSectors[sec] = RemoveValueFromList(objectsOnSectors[sec], obj)
+        end
+    end
+end
+
+function CloseSectors(toClose)
+
+    local prevOrder = CopyTable(SectorOrder)
+
+    local searchTokensOnSectors = ObjectsOnPlaces(getObjectsWithTag(SEARCH_TOKEN_TAG), Sectors)
+    local deleted = DeleteSearchTokensOnAdjecentSectors(searchTokensOnSectors, toClose)
+
+    local objectsOnSectors = ObjectsOnPlaces(getObjects(), Sectors)
+    ExcludeDeleted(objectsOnSectors, deleted)
+
+    local lifted = LiftFightersOnSectors(toClose, objectsOnSectors)
+
+    DeleteUnwantedObjects(toClose, objectsOnSectors)
+
+    DeleteSectors(toClose, objectsOnSectors)
+
+    Wait.frames(function()
+
+        AttachObjectsToSectors(objectsOnSectors, lifted)
+
+        PlaceSectors(SectorOrder)
+
+        PlaceLifted(lifted, prevOrder, SectorOrder)
+
+        Wait.time(RemoveAttachmentsFromSectors, TIME_TO_MOVE_SECTORS)
+
+    end, 10) -- time to destruct unwanted tokens
+
+end
+
+function TurnOffShields()
+    local fighters = getObjectsWithTag(FIGHTER_TOKEN_TAG)
+    for _,obj in ipairs(fighters) do
+        if obj.getStateId() ~= 1 then
+            obj.setState(1)
+        end
+    end
+    
 end
 
 require("Common")

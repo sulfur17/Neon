@@ -1,8 +1,6 @@
 --[[ TODO
 
-белые кубики
 сброс вещей
-фишки готовности с автопереворотом
 куда урон класть
 нужно порядок хода
 сторона Б не удобная
@@ -28,6 +26,7 @@ FIGHTER_TOKEN_TAG = 'FighterToken'
 BOT_TAG = 'Bot'
 SEARCH_TOKEN_TAG = 'SearchToken'
 READY_TOKEN_TAG = 'ReadyToken'
+ACTION_CARD_TAG = 'ActionCard'
 LIFT_HEIGHT = 3
 TIME_TO_MOVE_SECTORS = 1
 
@@ -35,6 +34,7 @@ SectorsList = nil
 SectorOrder = nil
 Sectors = nil
 Started = false
+Moved = nil
 
 --#endregion
 
@@ -49,6 +49,7 @@ function onLoad(script_state)
     if loaded then
         Started = state.Started
         SectorOrder = state.SectorOrder
+        Moved = state.Moved
     end
 
     HighlightFightersTokens()
@@ -58,8 +59,18 @@ function onSave()
     local state = {
         Started = Started,
         SectorOrder = SectorOrder,
+        Moved = Moved,
     }
     return JSON.encode(state)
+end
+
+function onPlayerTurn(player, previous_player)
+    if previous_player and Moved then
+        Moved[previous_player] = true
+        if not ValueIsInTable(false, Moved) then
+            Turns.enable = false
+        end
+    end
 end
 
 --#endregion
@@ -80,6 +91,11 @@ function btnStart(player, click, id)
     CreateSearchButtons()
 
     UpdateUI()
+
+    Decks.Loot.Green.shuffle()
+    Decks.Loot.Orange.shuffle()
+    Decks.Loot.Purple.shuffle()
+    Decks.Improvement.shuffle()
 end
 
 function btnSearch(sector, player_clicker_color, alt_click)
@@ -119,6 +135,8 @@ function btnNextRound(player, click, id)
     SetupReadyTokens()
 
     TurnOffShields()
+
+    Turns.enable = false
 
 end
 
@@ -169,17 +187,39 @@ function Init()
             Green  = getObjectFromGUID('bb4db8'),
             Orange = getObjectFromGUID('4a47be'),
             Purple = getObjectFromGUID('8afbdf'),
+        },
+        Improvement = getObjectFromGUID('9709a7'),
+    }
+    Fighter = {
+        Colors = {
+            ['Глыба']   = 'Orange',
+            ['Призрак'] = 'White',
+            ['Феникс']  = 'Red',
+            ['Акари']   = 'Pink',
+            ['Снейк']   = 'Green',
+            ['Иллюзия'] = 'Teal',
+        },
+        Sheets = {
+            ['Глыба']   = getObjectFromGUID('7e758f'),
+            ['Призрак'] = getObjectFromGUID('5addbf'),
+            ['Феникс']  = getObjectFromGUID('8136a5'),
+            ['Акари']   = getObjectFromGUID('b41dd1'),
+            ['Снейк']   = getObjectFromGUID('9bf9ca'),
+            ['Иллюзия'] = getObjectFromGUID('c6bcdc'),
         }
     }
-    FighterColors = {
-        ['Глыба']   = 'Orange',
-        ['Призрак'] = 'White',
-        ['Феникс']  = 'Red',
-        ['Акари']   = 'Pink',
-        ['Снейк']   = 'Green',
-        ['Иллюзия'] = 'Teal',
+    ColorsOrder = {'Pink', 'Orange', 'White', 'Red', 'Green', 'Teal'}
+    Zones = {
+        ChoosedCards = {
+            Teal   = getObjectFromGUID('9e51ff'),
+            Green  = getObjectFromGUID('1045c8'),
+            Red    = getObjectFromGUID('dc192a'),
+            White  = getObjectFromGUID('cfed5c'),
+            Orange = getObjectFromGUID('4597bf'),
+            Pink   = getObjectFromGUID('125296'),
+        }
     }
-
+    LeaderToken = getObjectFromGUID('0b9a2b')
     TableTokensZone = getObjectFromGUID('56882d')
     RoundsInfo = {
         Sheet = getObjectFromGUID('6fddde'),
@@ -386,7 +426,7 @@ function HighlightFighterToken(obj)
     if not (obj.type == 'Tile' and obj.hasTag(FIGHTER_TOKEN_TAG)) then
         return
     end
-    local color = Color.fromString(FighterColors[obj.getName()])
+    local color = Color.fromString(Fighter.Colors[obj.getName()])
     obj.highlightOn(color)
 end
 
@@ -541,7 +581,79 @@ function TurnOffShields()
             obj.setState(1)
         end
     end
-    
+end
+
+function GetLeader()
+    local res
+
+    local distance = 999
+    for name,sheet in pairs(Fighter.Sheets) do
+        local newDistance = Vector.distance(sheet.getPosition(), LeaderToken.getPosition())
+        if newDistance < distance then
+            distance = newDistance
+            res = Fighter.Colors[name]
+        end
+    end
+
+    return res
+end
+
+function GetInitiatives()
+    local res = {}
+
+    for color,zone in pairs(Zones.ChoosedCards) do
+
+        local max_y = -10
+        local topCard = nil
+        local objects = zone.getObjects()
+        for _,obj in ipairs(objects) do
+            if obj.type == 'Card' and obj.hasTag(ACTION_CARD_TAG) then
+                local card = obj
+                local newY = card.getPosition().y
+                if newY > max_y then
+                    topCard = card
+                    max_y = newY
+                end
+            end
+        end
+        if topCard then
+            local initiative = tonumber(topCard.getGMNotes())
+            res[color] = initiative
+        end
+    end
+
+    return res
+end
+
+function GetTurnOrder()
+    local res = {}
+
+    local leader = GetLeader()
+    local order = SortByPlayer(ColorsOrder, leader)
+    local initiatives = GetInitiatives()
+
+    for i = 1,7 do
+        for _,color in ipairs(order) do
+            if initiatives[color] == i then
+                table.insert(res, color)
+            end
+        end
+    end
+
+    return res
+end
+
+function StartPlayersActions()
+
+    -- TODO: set shields
+    Turns.order = GetTurnOrder()
+    Turns.enable = true
+
+    Moved = {}
+    for _,color in ipairs(Turns.order) do
+        Moved[color] = false
+    end
+
 end
 
 require("Common")

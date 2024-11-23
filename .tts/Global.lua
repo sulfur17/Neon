@@ -34,7 +34,7 @@ SectorsList = nil
 SectorOrder = nil
 Sectors = nil
 Started = false
-Moved = nil
+Moved = {}
 
 --#endregion
 
@@ -66,11 +66,15 @@ end
 
 function onPlayerTurn(player, previous_player)
     if previous_player and Moved then
-        Moved[previous_player] = true
+        Moved[previous_player.color] = true
         if not ValueIsInTable(false, Moved) then
             Turns.enable = false
         end
     end
+end
+
+function onObjectSpawn(obj)
+    HighlightFighterToken(obj)
 end
 
 --#endregion
@@ -140,8 +144,18 @@ function btnNextRound(player, click, id)
 
 end
 
-function onObjectSpawn(obj)
-    HighlightFighterToken(obj)
+function btnGetLeadership(player, click, id)
+    if click ~= '-1' then return end -- pressed not with LMB
+
+    local fighter = KeyByValue(Fighter.Colors, player.color)
+    local pos = Fighter.Sheets[fighter].getPosition()
+    Tokens.Leader.setPositionSmooth(pos + Vector(-2, 1, 0))
+
+    Wait.time(function ()
+        Turns.order = GetTurnOrder()
+        log(Turns.order)
+    end, 1) -- time to get leadership token
+
 end
 
 function test(player, click, id)
@@ -164,7 +178,8 @@ function Init()
             getObjectFromGUID('3bea0a'),
             getObjectFromGUID('8c061b'),
             getObjectFromGUID('58b7ed'),
-        }
+        },
+        Leader = getObjectFromGUID('0b9a2b')
     }
     SectorsList = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
     Sectors = {
@@ -635,7 +650,9 @@ function GetTurnOrder()
     for i = 1,7 do
         for _,color in ipairs(order) do
             if initiatives[color] == i then
-                table.insert(res, color)
+                if not Moved[color] then
+                    table.insert(res, color)
+                end
             end
         end
     end

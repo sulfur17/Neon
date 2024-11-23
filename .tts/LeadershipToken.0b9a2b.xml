@@ -1,0 +1,4 @@
+<Button onClick="Global/btnGetLeadership" 
+    position="10 190 20" width="250" height="100" fontSize="40" 
+    rotation="180 0 0" 
+    text="Взять Лидерство" />
